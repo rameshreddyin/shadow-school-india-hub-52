@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap, Users, Filter } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
@@ -42,11 +41,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 
-import StreamlinedStudentForm from '@/components/students/StreamlinedStudentForm';
-import EnrollmentForm from '@/components/students/EnrollmentForm';
+import AddStudentDialog from '@/components/students/AddStudentDialog';
 import BulkPromotionDialog from '@/components/students/BulkPromotionDialog';
 import EditEnrollmentDialog from '@/components/students/EditEnrollmentDialog';
 import DeleteConfirmationDialog from '@/components/students/DeleteConfirmationDialog';
+import EnhancedStudentForm from '@/components/students/EnhancedStudentForm';
 import { EnhancedStudentFormValues } from '@/schemas/enhanced-student.schema';
 import { EnrollmentFormValues } from '@/schemas/enrollment.schema';
 
@@ -125,13 +124,11 @@ const StudentManagementPage: React.FC = () => {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   
   // Dialog states
-  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
-  const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(false);
   const [isBulkPromotionOpen, setIsBulkPromotionOpen] = useState(false);
   const [isEditEnrollmentOpen, setIsEditEnrollmentOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
   
-  const [currentStudentData, setCurrentStudentData] = useState<EnhancedStudentFormValues | null>(null);
   const [currentStudent, setCurrentStudent] = useState<any>(null);
   const [students, setStudents] = useState(studentManagementData);
   const isMobile = useIsMobile();
@@ -168,18 +165,6 @@ const StudentManagementPage: React.FC = () => {
       .toUpperCase();
   };
 
-  const handleStudentFormSuccess = (studentData: EnhancedStudentFormValues) => {
-    setCurrentStudentData(studentData);
-    setIsAddStudentOpen(false);
-    setIsEnrollmentOpen(true);
-  };
-
-  const handleEnrollmentSuccess = () => {
-    setIsEnrollmentOpen(false);
-    setCurrentStudentData(null);
-    // Refresh student list in real app
-  };
-
   const handleBulkPromotion = (promotions: any[]) => {
     console.log('Bulk promotions:', promotions);
     // Handle bulk promotion logic here
@@ -188,6 +173,29 @@ const StudentManagementPage: React.FC = () => {
   const handleEditEnrollment = (student: any) => {
     setCurrentStudent(student);
     setIsEditEnrollmentOpen(true);
+  };
+
+  const handleEditStudent = (student: any) => {
+    setCurrentStudent(student);
+    setIsEditStudentOpen(true);
+  };
+
+  const handleEnrollStudent = (studentId: string) => {
+    // Handle student enrollment logic
+    toast({
+      title: "Enrollment Started",
+      description: "Please complete the enrollment process for the student.",
+      duration: 3000,
+    });
+  };
+
+  const handlePromoteStudent = (studentId: string) => {
+    // Handle single student promotion logic
+    toast({
+      title: "Promotion Started",
+      description: "Please complete the promotion process for the student.",
+      duration: 3000,
+    });
   };
 
   const handleDeleteStudent = (student: any) => {
@@ -222,6 +230,24 @@ const StudentManagementPage: React.FC = () => {
     } else {
       setSelectedStudents(filteredStudents.map(s => s.id));
     }
+  };
+
+  const handleStudentEditSuccess = (studentData: EnhancedStudentFormValues) => {
+    // Update student data in the list
+    setStudents(prev => prev.map(student => 
+      student.id === currentStudent?.id 
+        ? { ...student, ...studentData }
+        : student
+    ));
+    
+    toast({
+      title: "Student Updated",
+      description: `${studentData.name}'s information has been updated successfully.`,
+      duration: 5000,
+    });
+    
+    setIsEditStudentOpen(false);
+    setCurrentStudent(null);
   };
 
   const classes = ['all', 'XII', 'XI', 'X', 'IX', 'VIII', 'VII', 'VI', 'V', 'IV', 'III', 'II', 'I'];
@@ -365,9 +391,13 @@ const StudentManagementPage: React.FC = () => {
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditStudent(student)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Student
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditEnrollment(student)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Enrollment
                             </DropdownMenuItem>
                             {student.status === 'not_enrolled' && (
                               <DropdownMenuItem onClick={() => handleEnrollStudent(student.id)}>
@@ -381,9 +411,12 @@ const StudentManagementPage: React.FC = () => {
                                 Promote
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteStudent(student)}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              Delete Permanently
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -455,18 +488,22 @@ const StudentManagementPage: React.FC = () => {
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditStudent(student)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Student
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEditEnrollment(student)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Enrollment
                             </DropdownMenuItem>
                             {student.status === 'not_enrolled' && (
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEnrollStudent(student.id)}>
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Enroll Student
                               </DropdownMenuItem>
                             )}
                             {student.status === 'enrolled' && (
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePromoteStudent(student.id)}>
                                 <GraduationCap className="h-4 w-4 mr-2" />
                                 Promote
                               </DropdownMenuItem>
@@ -491,37 +528,27 @@ const StudentManagementPage: React.FC = () => {
       </div>
 
       {/* Add Student Dialog */}
-      <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+      <AddStudentDialog />
+
+      {/* Edit Student Dialog */}
+      <Dialog open={isEditStudentOpen} onOpenChange={setIsEditStudentOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Student & Create Enrollment</DialogTitle>
+            <DialogTitle>Edit Student Information</DialogTitle>
             <DialogDescription>
-              Enter the student's complete information. After saving, you'll proceed to create enrollment.
+              Update all student details including personal information, contact details, and other data.
             </DialogDescription>
           </DialogHeader>
-          <StreamlinedStudentForm 
-            onNext={handleStudentFormSuccess} 
-            onCancel={() => setIsAddStudentOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Enrollment Dialog */}
-      <Dialog open={isEnrollmentOpen} onOpenChange={setIsEnrollmentOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Step 2: Create Enrollment</DialogTitle>
-            <DialogDescription>
-              Complete the enrollment process for the student.
-            </DialogDescription>
-          </DialogHeader>
-          {currentStudentData && (
-            <EnrollmentForm 
-              studentData={currentStudentData}
-              onSuccess={handleEnrollmentSuccess}
-              onBack={() => {
-                setIsEnrollmentOpen(false);
-                setIsAddStudentOpen(true);
+          {currentStudent && (
+            <EnhancedStudentForm 
+              onSuccess={handleStudentEditSuccess}
+              initialData={{
+                name: currentStudent.name,
+                admissionNumber: currentStudent.admissionNumber,
+                fatherName: currentStudent.fatherName,
+                fatherPhone: currentStudent.fatherPhone,
+                status: currentStudent.status,
+                // Add other fields as needed from currentStudent
               }}
             />
           )}
