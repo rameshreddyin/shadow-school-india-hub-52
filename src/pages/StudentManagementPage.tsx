@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap, Users, Filter } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
@@ -103,7 +104,7 @@ const studentManagementData = [
     admissionNumber: 'ADM2023004',
     fatherName: 'Rajesh Kumar',
     fatherPhone: '+91-9876543213',
-    status: 'deleted',
+    status: 'not_enrolled',
     currentClass: '',
     currentSection: '',
     currentYear: '',
@@ -124,6 +125,7 @@ const StudentManagementPage: React.FC = () => {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   
   // Dialog states
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isBulkPromotionOpen, setIsBulkPromotionOpen] = useState(false);
   const [isEditEnrollmentOpen, setIsEditEnrollmentOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -233,10 +235,15 @@ const StudentManagementPage: React.FC = () => {
   };
 
   const handleStudentEditSuccess = (studentData: EnhancedStudentFormValues) => {
-    // Update student data in the list
+    // Update student data in the list - handle photo field conversion
     setStudents(prev => prev.map(student => 
       student.id === currentStudent?.id 
-        ? { ...student, ...studentData }
+        ? { 
+            ...student, 
+            ...studentData,
+            // Convert File to string if needed for photo
+            photo: typeof studentData.photo === 'string' ? studentData.photo : (studentData.photo ? URL.createObjectURL(studentData.photo) : student.photo)
+          }
         : student
     ));
     
@@ -528,7 +535,9 @@ const StudentManagementPage: React.FC = () => {
       </div>
 
       {/* Add Student Dialog */}
-      <AddStudentDialog />
+      <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+        <AddStudentDialog />
+      </Dialog>
 
       {/* Edit Student Dialog */}
       <Dialog open={isEditStudentOpen} onOpenChange={setIsEditStudentOpen}>
