@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Plus, User, Edit, Eye, Trash2, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -78,6 +79,7 @@ const StudentsPage: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<string>('All Classes');
   const [selectedSection, setSelectedSection] = useState<string>('All Sections');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Filter students based on class, section, and search query
@@ -119,7 +121,10 @@ const StudentsPage: React.FC = () => {
                 Manage Students
               </Button>
             </Link>
-            <AddStudentDialog />
+            <Button onClick={() => setIsAddStudentOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Student
+            </Button>
           </div>
         </div>
 
@@ -280,6 +285,12 @@ const StudentsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Add Student Dialog */}
+      <AddStudentDialog 
+        open={isAddStudentOpen} 
+        onOpenChange={setIsAddStudentOpen}
+      />
     </AppLayout>
   );
 };
