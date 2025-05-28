@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import StudentsPage from './pages/StudentsPage';
+import StudentManagementPage from './pages/StudentManagementPage';
 import TeachersPage from './pages/TeachersPage';
 import ClassesPage from './pages/ClassesPage';
 import AcademicCalendarPage from './pages/AcademicCalendarPage';
@@ -56,6 +57,7 @@ function App() {
         {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/students" element={<ProtectedRoute><StudentsPage /></ProtectedRoute>} />
+        <Route path="/student-management" element={<ProtectedRoute><StudentManagementPage /></ProtectedRoute>} />
         <Route path="/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
         <Route path="/teachers/:id" element={<ProtectedRoute><StaffInfoPage /></ProtectedRoute>} />
         <Route path="/teachers/edit/:id" element={<ProtectedRoute><EditStaffPage /></ProtectedRoute>} />

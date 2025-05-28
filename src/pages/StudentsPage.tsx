@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Plus, User, Edit, Eye, Trash2 } from 'lucide-react';
+import { Search, Plus, User, Edit, Eye, Trash2, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,8 +34,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AddStudentDialog from '@/components/students/AddStudentDialog';
 
-// Mock student data
-const students = [
+// Mock student data - only enrolled students for current academic year
+const enrolledStudents = [
   {
     id: '1',
     name: 'Aarav Sharma',
@@ -68,28 +69,6 @@ const students = [
     status: 'Active',
     photo: '',
   },
-  {
-    id: '4',
-    name: 'Ananya Kumar',
-    rollNumber: '2304',
-    admissionNumber: 'ADM2023004',
-    class: 'VIII',
-    section: 'C',
-    parentName: 'Rajesh Kumar',
-    status: 'Left',
-    photo: '',
-  },
-  {
-    id: '5',
-    name: 'Rohit Verma',
-    rollNumber: '2305',
-    admissionNumber: 'ADM2023005',
-    class: 'VII',
-    section: 'A',
-    parentName: 'Sanjay Verma',
-    status: 'Active',
-    photo: '',
-  },
 ];
 
 const classes = ['All Classes', 'XII', 'XI', 'X', 'IX', 'VIII', 'VII', 'VI', 'V', 'IV', 'III', 'II', 'I'];
@@ -102,7 +81,7 @@ const StudentsPage: React.FC = () => {
   const isMobile = useIsMobile();
 
   // Filter students based on class, section, and search query
-  const filteredStudents = students.filter(student => {
+  const filteredStudents = enrolledStudents.filter(student => {
     const matchesClass = selectedClass === 'All Classes' || student.class === selectedClass;
     const matchesSection = selectedSection === 'All Sections' || student.section === selectedSection;
     const matchesSearch = 
@@ -129,8 +108,19 @@ const StudentsPage: React.FC = () => {
       <div className="space-y-4">
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Student List</h1>
-          <AddStudentDialog />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Currently Enrolled Students</h1>
+            <p className="text-sm text-muted-foreground">Academic Year 2024-2025</p>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/student-management">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Manage Students
+              </Button>
+            </Link>
+            <AddStudentDialog />
+          </div>
         </div>
 
         {/* Filters and Search */}
