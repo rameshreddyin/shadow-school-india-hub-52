@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap, Users, Filter } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
@@ -44,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import AddStudentDialog from '@/components/students/AddStudentDialog';
 import BulkPromotionDialog from '@/components/students/BulkPromotionDialog';
+import QuickPromotionDialog from '@/components/students/QuickPromotionDialog';
 import EditEnrollmentDialog from '@/components/students/EditEnrollmentDialog';
 import DeleteConfirmationDialog from '@/components/students/DeleteConfirmationDialog';
 import EnhancedStudentForm from '@/components/students/EnhancedStudentForm';
@@ -127,6 +127,7 @@ const StudentManagementPage: React.FC = () => {
   // Dialog states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isBulkPromotionOpen, setIsBulkPromotionOpen] = useState(false);
+  const [isQuickPromotionOpen, setIsQuickPromotionOpen] = useState(false);
   const [isEditEnrollmentOpen, setIsEditEnrollmentOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
@@ -192,12 +193,32 @@ const StudentManagementPage: React.FC = () => {
   };
 
   const handlePromoteStudent = (studentId: string) => {
-    // Handle single student promotion logic
-    toast({
-      title: "Promotion Started",
-      description: "Please complete the promotion process for the student.",
-      duration: 3000,
-    });
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+      setCurrentStudent(student);
+      setIsQuickPromotionOpen(true);
+    }
+  };
+
+  const handleQuickPromotion = (studentId: string, targetClass: string, targetSection: string, academicYear: string) => {
+    // Update student data with promotion
+    setStudents(prev => prev.map(student => 
+      student.id === studentId 
+        ? { 
+            ...student, 
+            currentClass: targetClass,
+            currentSection: targetSection,
+            currentYear: academicYear,
+            enrollmentHistory: [
+              { year: academicYear, class: targetClass, section: targetSection, status: 'enrolled' },
+              ...student.enrollmentHistory
+            ]
+          }
+        : student
+    ));
+    
+    setIsQuickPromotionOpen(false);
+    setCurrentStudent(null);
   };
 
   const handleDeleteStudent = (student: any) => {
@@ -563,6 +584,14 @@ const StudentManagementPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Quick Promotion Dialog */}
+      <QuickPromotionDialog
+        open={isQuickPromotionOpen}
+        onOpenChange={setIsQuickPromotionOpen}
+        student={currentStudent}
+        onPromote={handleQuickPromotion}
+      />
 
       {/* Bulk Promotion Dialog */}
       <BulkPromotionDialog
