@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap, Users, Filter } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
@@ -555,10 +556,11 @@ const StudentManagementPage: React.FC = () => {
         )}
       </div>
 
-      {/* Add Student Dialog */}
-      <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
-        <AddStudentDialog />
-      </Dialog>
+      {/* Add Student Dialog - Fixed: Remove extra Dialog wrapper */}
+      <AddStudentDialog 
+        open={isAddStudentOpen} 
+        onOpenChange={setIsAddStudentOpen}
+      />
 
       {/* Edit Student Dialog */}
       <Dialog open={isEditStudentOpen} onOpenChange={setIsEditStudentOpen}>
