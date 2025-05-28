@@ -1,6 +1,7 @@
 
 import React from 'react';
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -53,34 +54,36 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ open, onOpenChange 
   }, [open]);
 
   return (
-    <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>
-          {step === 'student' ? 'Add New Student' : 'Create Enrollment'}
-        </DialogTitle>
-        <DialogDescription>
-          {step === 'student' 
-            ? 'Enter the student\'s complete information. After saving, you\'ll proceed to create enrollment.'
-            : 'Complete the enrollment process for the student.'
-          }
-        </DialogDescription>
-      </DialogHeader>
-      
-      {step === 'student' ? (
-        <StreamlinedStudentForm 
-          onNext={handleStudentSuccess}
-          onCancel={handleCancel}
-        />
-      ) : (
-        studentData && (
-          <EnrollmentForm
-            studentData={studentData}
-            onSuccess={handleEnrollmentSuccess}
-            onBack={handleBack}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {step === 'student' ? 'Add New Student' : 'Create Enrollment'}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 'student' 
+              ? 'Enter the student\'s complete information. After saving, you\'ll proceed to create enrollment.'
+              : 'Complete the enrollment process for the student.'
+            }
+          </DialogDescription>
+        </DialogHeader>
+        
+        {step === 'student' ? (
+          <StreamlinedStudentForm 
+            onNext={handleStudentSuccess}
+            onCancel={handleCancel}
           />
-        )
-      )}
-    </DialogContent>
+        ) : (
+          studentData && (
+            <EnrollmentForm
+              studentData={studentData}
+              onSuccess={handleEnrollmentSuccess}
+              onBack={handleBack}
+            />
+          )
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
