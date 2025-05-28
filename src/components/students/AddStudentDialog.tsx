@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -9,7 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import AddStudentForm from './AddStudentForm';
+import StreamlinedStudentForm from './StreamlinedStudentForm';
+import EnrollmentForm from './EnrollmentForm';
+import { EnhancedStudentFormValues } from '@/schemas/enhanced-student.schema';
 
 interface AddStudentDialogProps {
   trigger?: React.ReactNode;
@@ -17,17 +20,34 @@ interface AddStudentDialogProps {
 
 const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ trigger }) => {
   const [open, setOpen] = React.useState(false);
+  const [step, setStep] = React.useState<'student' | 'enrollment'>('student');
+  const [studentData, setStudentData] = React.useState<EnhancedStudentFormValues | null>(null);
 
-  const handleSuccess = () => {
-    setOpen(false);
+  const handleStudentSuccess = (data: EnhancedStudentFormValues) => {
+    setStudentData(data);
+    setStep('enrollment');
   };
 
-  const handleAddAnother = () => {
-    // Keep the dialog open, form will reset itself
+  const handleEnrollmentSuccess = () => {
+    setOpen(false);
+    setStep('student');
+    setStudentData(null);
+  };
+
+  const handleBack = () => {
+    setStep('student');
+  };
+
+  const resetDialog = () => {
+    setStep('student');
+    setStudentData(null);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetDialog();
+    }}>
       <DialogTrigger asChild>
         {trigger || (
           <Button className="flex items-center gap-2">
@@ -36,14 +56,33 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Student</DialogTitle>
+          <DialogTitle>
+            {step === 'student' ? 'Add New Student' : 'Create Enrollment'}
+          </DialogTitle>
           <DialogDescription>
-            Fill in the student details. Fields marked with * are required.
+            {step === 'student' 
+              ? 'Enter the student\'s complete information. After saving, you\'ll proceed to create enrollment.'
+              : 'Complete the enrollment process for the student.'
+            }
           </DialogDescription>
         </DialogHeader>
-        <AddStudentForm onSuccess={handleSuccess} onAddAnother={handleAddAnother} />
+        
+        {step === 'student' ? (
+          <StreamlinedStudentForm 
+            onNext={handleStudentSuccess}
+            onCancel={() => setOpen(false)}
+          />
+        ) : (
+          studentData && (
+            <EnrollmentForm
+              studentData={studentData}
+              onSuccess={handleEnrollmentSuccess}
+              onBack={handleBack}
+            />
+          )
+        )}
       </DialogContent>
     </Dialog>
   );

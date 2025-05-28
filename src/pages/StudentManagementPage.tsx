@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap } from 'lucide-react';
+import { Search, Plus, Edit, Eye, Trash2, UserPlus, GraduationCap, Users, Filter } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -39,9 +39,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import EnhancedStudentForm from '@/components/students/EnhancedStudentForm';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+
+import StreamlinedStudentForm from '@/components/students/StreamlinedStudentForm';
 import EnrollmentForm from '@/components/students/EnrollmentForm';
+import BulkPromotionDialog from '@/components/students/BulkPromotionDialog';
+import EditEnrollmentDialog from '@/components/students/EditEnrollmentDialog';
+import DeleteConfirmationDialog from '@/components/students/DeleteConfirmationDialog';
 import { EnhancedStudentFormValues } from '@/schemas/enhanced-student.schema';
+import { EnrollmentFormValues } from '@/schemas/enrollment.schema';
 
 // Extended student data with enrollment history
 const studentManagementData = [
@@ -109,23 +116,38 @@ const studentManagementData = [
 ];
 
 const StudentManagementPage: React.FC = () => {
+  const { toast } = useToast();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedSection, setSelectedSection] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('2024-2025');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  
+  // Dialog states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(false);
+  const [isBulkPromotionOpen, setIsBulkPromotionOpen] = useState(false);
+  const [isEditEnrollmentOpen, setIsEditEnrollmentOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  
   const [currentStudentData, setCurrentStudentData] = useState<EnhancedStudentFormValues | null>(null);
+  const [currentStudent, setCurrentStudent] = useState<any>(null);
   const [students, setStudents] = useState(studentManagementData);
   const isMobile = useIsMobile();
 
-  // Filter students based on status and search query
+  // Filter students based on all criteria
   const filteredStudents = students.filter(student => {
     const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
+    const matchesClass = selectedClass === 'all' || student.currentClass === selectedClass;
+    const matchesSection = selectedSection === 'all' || student.currentSection === selectedSection;
+    const matchesYear = selectedYear === 'all' || student.currentYear === selectedYear;
     const matchesSearch = 
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       student.admissionNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.fatherName.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesClass && matchesSection && matchesYear && matchesSearch;
   });
 
   const getStatusColor = (status: string) => {
@@ -158,44 +180,132 @@ const StudentManagementPage: React.FC = () => {
     // Refresh student list in real app
   };
 
-  const handlePromoteStudent = (studentId: string) => {
-    console.log('Promoting student:', studentId);
-    // Implement promotion logic
+  const handleBulkPromotion = (promotions: any[]) => {
+    console.log('Bulk promotions:', promotions);
+    // Handle bulk promotion logic here
   };
 
-  const handleEnrollStudent = (studentId: string) => {
-    console.log('Enrolling student:', studentId);
-    // Implement enrollment logic
+  const handleEditEnrollment = (student: any) => {
+    setCurrentStudent(student);
+    setIsEditEnrollmentOpen(true);
   };
+
+  const handleDeleteStudent = (student: any) => {
+    setCurrentStudent(student);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (currentStudent) {
+      setStudents(prev => prev.filter(s => s.id !== currentStudent.id));
+      toast({
+        title: "Student Deleted",
+        description: `${currentStudent.name} has been permanently deleted from the database.`,
+        variant: "destructive",
+        duration: 5000,
+      });
+      setCurrentStudent(null);
+    }
+  };
+
+  const handleStudentSelect = (studentId: string) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(filteredStudents.map(s => s.id));
+    }
+  };
+
+  const classes = ['all', 'XII', 'XI', 'X', 'IX', 'VIII', 'VII', 'VI', 'V', 'IV', 'III', 'II', 'I'];
+  const sections = ['all', 'A', 'B', 'C', 'D'];
+  const academicYears = ['2024-2025', '2025-2026', '2023-2024'];
 
   return (
     <AppLayout title="Student Management">
       <div className="space-y-4">
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Student Management</h1>
-          <Button onClick={() => setIsAddStudentOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Student
-          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Student Management</h1>
+            <p className="text-sm text-muted-foreground">
+              {filteredStudents.length} students found
+              {selectedStudents.length > 0 && ` (${selectedStudents.length} selected)`}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {selectedStudents.length > 0 && (
+              <Button onClick={() => setIsBulkPromotionOpen(true)} variant="outline">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Promote Selected ({selectedStudents.length})
+              </Button>
+            )}
+            <Button onClick={() => setIsAddStudentOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Student
+            </Button>
+          </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by Status" />
+        {/* Enhanced Filters */}
+        <div className="grid gap-4 md:grid-cols-6">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Academic Year" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Students</SelectItem>
-              <SelectItem value="enrolled">Enrolled</SelectItem>
-              <SelectItem value="not_enrolled">Not Enrolled</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="deleted">Deleted</SelectItem>
+              {academicYears.map((year) => (
+                <SelectItem key={year} value={year}>{year}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
-          <div className="relative md:col-span-3">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="enrolled">Enrolled</SelectItem>
+              <SelectItem value="not_enrolled">Not Enrolled</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger>
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
+            <SelectContent>
+              {classes.map((cls) => (
+                <SelectItem key={cls} value={cls}>
+                  {cls === 'all' ? 'All Classes' : cls}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedSection} onValueChange={setSelectedSection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Section" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map((section) => (
+                <SelectItem key={section} value={section}>
+                  {section === 'all' ? 'All Sections' : section}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search by name, admission number, or parent name"
@@ -206,7 +316,7 @@ const StudentManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Student List - Table view for desktop, Card view for mobile */}
+        {/* Student List */}
         {isMobile ? (
           <ScrollArea className="h-[calc(100vh-280px)]">
             <div className="grid gap-4">
@@ -290,6 +400,12 @@ const StudentManagementPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Admission No.</TableHead>
                     <TableHead>Father's Name</TableHead>
@@ -301,6 +417,12 @@ const StudentManagementPage: React.FC = () => {
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={() => handleStudentSelect(student.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -333,25 +455,28 @@ const StudentManagementPage: React.FC = () => {
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditEnrollment(student)}>
                               <Edit className="h-4 w-4 mr-2" />
-                              Edit Student
+                              Edit Enrollment
                             </DropdownMenuItem>
                             {student.status === 'not_enrolled' && (
-                              <DropdownMenuItem onClick={() => handleEnrollStudent(student.id)}>
+                              <DropdownMenuItem>
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Enroll Student
                               </DropdownMenuItem>
                             )}
                             {student.status === 'enrolled' && (
-                              <DropdownMenuItem onClick={() => handlePromoteStudent(student.id)}>
+                              <DropdownMenuItem>
                                 <GraduationCap className="h-4 w-4 mr-2" />
                                 Promote
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteStudent(student)}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              Delete Permanently
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -369,12 +494,15 @@ const StudentManagementPage: React.FC = () => {
       <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Student</DialogTitle>
+            <DialogTitle>Add New Student & Create Enrollment</DialogTitle>
             <DialogDescription>
-              Enter the student's complete information. All fields marked with * are required.
+              Enter the student's complete information. After saving, you'll proceed to create enrollment.
             </DialogDescription>
           </DialogHeader>
-          <EnhancedStudentForm onSuccess={handleStudentFormSuccess} />
+          <StreamlinedStudentForm 
+            onNext={handleStudentFormSuccess} 
+            onCancel={() => setIsAddStudentOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -382,7 +510,7 @@ const StudentManagementPage: React.FC = () => {
       <Dialog open={isEnrollmentOpen} onOpenChange={setIsEnrollmentOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Enrollment</DialogTitle>
+            <DialogTitle>Step 2: Create Enrollment</DialogTitle>
             <DialogDescription>
               Complete the enrollment process for the student.
             </DialogDescription>
@@ -399,6 +527,33 @@ const StudentManagementPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Promotion Dialog */}
+      <BulkPromotionDialog
+        open={isBulkPromotionOpen}
+        onOpenChange={setIsBulkPromotionOpen}
+        students={filteredStudents.filter(s => selectedStudents.includes(s.id))}
+        onPromote={handleBulkPromotion}
+      />
+
+      {/* Edit Enrollment Dialog */}
+      <EditEnrollmentDialog
+        open={isEditEnrollmentOpen}
+        onOpenChange={setIsEditEnrollmentOpen}
+        student={currentStudent}
+        onSave={(data: EnrollmentFormValues) => {
+          console.log('Enrollment updated:', data);
+          setIsEditEnrollmentOpen(false);
+        }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={setIsDeleteConfirmOpen}
+        student={currentStudent}
+        onConfirm={handleConfirmDelete}
+      />
     </AppLayout>
   );
 };
